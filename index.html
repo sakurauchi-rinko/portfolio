@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sakurauchi Rinko — Portfolio 2026</title>
+<meta name="description" content="櫻内凜子のポートフォリオ。UI/UX、Webデザイン、グラフィックデザインの実績を掲載しています。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<section class="hero">
+  <canvas id="hero-canvas" aria-hidden="true"></canvas>
+  <p class="hero__label">PORTFOLIO — 2026</p>
+  <div class="hero__tags">
+    <span class="hero__tag">UI Design</span>
+    <span class="hero__tag">Web Design</span>
+    <span class="hero__tag">Graphic</span>
+    <span class="hero__tag">UX Design</span>
+  </div>
+  <h1 class="hero__name">Sakurauchi Rinko</h1>
+  <p class="hero__sub">Portfolio / Web · UI · Graphic</p>
+</section>
+
+<script>
+(function() {
+  const canvas = document.getElementById('hero-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let w, h, dpr;
+  let mouse = { x: -9999, y: -9999 };
+  let nodes = [];
+  const NODE_COUNT_BASE = 110;
+  const CONNECT_DIST = 150;
+  const MOUSE_RADIUS = 180;
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    w = rect.width;
+    h = rect.height;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function createNodes() {
+    const count = Math.min(NODE_COUNT_BASE, Math.max(45, Math.floor((w * h) / 8000)));
+    nodes = [];
+    for (let i = 0; i < count; i++) {
+      const isGold = Math.random() < 0.18;
+      nodes.push({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.3,
+        r: isGold ? (1.8 + Math.random() * 2) : (0.8 + Math.random() * 1.5),
+        alpha: isGold ? (0.4 + Math.random() * 0.3) : (0.1 + Math.random() * 0.3),
+        isGold: isGold,
+      });
+    }
+  }
+
+  function update() {
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i];
+      n.x += n.vx;
+      n.y += n.vy;
+      if (n.x < -10) n.x = w + 10;
+      if (n.x > w + 10) n.x = -10;
+      if (n.y < -10) n.y = h + 10;
+      if (n.y > h + 10) n.y = -10;
+
+      const dx = n.x - mouse.x;
+      const dy = n.y - mouse.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < MOUSE_RADIUS && dist > 0) {
+        const force = (MOUSE_RADIUS - dist) / MOUSE_RADIUS;
+        n.vx += (dx / dist) * force * 0.08;
+        n.vy += (dy / dist) * force * 0.08;
+      }
+
+      const speed = Math.sqrt(n.vx * n.vx + n.vy * n.vy);
+      if (speed > 1.0) {
+        n.vx = (n.vx / speed) * 1.0;
+        n.vy = (n.vy / speed) * 1.0;
+      }
+      n.vx *= 0.995;
+      n.vy *= 0.995;
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const a = nodes[i];
+        const b = nodes[j];
+        const dx = a.x - b.x;
+        const dy = a.y - b.y;
+        const distSq = dx * dx + dy * dy;
+        if (distSq < CONNECT_DIST * CONNECT_DIST) {
+          const dist = Math.sqrt(distSq);
+          const t = 1 - dist / CONNECT_DIST;
+          const useGold = a.isGold || b.isGold;
+          const opacity = t * (useGold ? 0.14 : 0.1);
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.strokeStyle = useGold
+            ? 'rgba(201,168,76,' + opacity + ')'
+            : 'rgba(255,255,255,' + opacity + ')';
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+    }
+
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i];
+      if (n.isGold) {
+        const glow = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r * 3);
+        glow.addColorStop(0, 'rgba(201,168,76,' + (n.alpha * 0.18) + ')');
+        glow.addColorStop(1, 'rgba(201,168,76,0)');
+        ctx.fillStyle = glow;
+        ctx.fillRect(n.x - n.r * 3, n.y - n.r * 3, n.r * 6, n.r * 6);
+      }
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+      ctx.fillStyle = n.isGold
+        ? 'rgba(201,168,76,' + n.alpha + ')'
+        : 'rgba(255,255,255,' + n.alpha + ')';
+      ctx.fill();
+    }
+  }
+
+  let raf;
+  function loop() {
+    update();
+    draw();
+    raf = requestAnimationFrame(loop);
+  }
+
+  function init() {
+    resize();
+    createNodes();
+    if (prefersReducedMotion) {
+      draw();
+    } else {
+      loop();
+    }
+  }
+
+  canvas.parentElement.addEventListener('mousemove', function(e) {
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = e.clientX - rect.left;
+    mouse.y = e.clientY - rect.top;
+  });
+
+  canvas.parentElement.addEventListener('mouseleave', function() {
+    mouse.x = -9999;
+    mouse.y = -9999;
+  });
+
+  window.addEventListener('resize', function() {
+    resize();
+    createNodes();
+  });
+
+  init();
+})();
+</script>
+
+<section class="about">
+  <div class="about__grid">
+    <div>
+      <p class="section-label">ABOUT</p>
+      <h2 class="about__heading">つくる範囲を、ひろげていきたい。</h2>
+      <div class="about__text">
+        <p>フロントエンドやバックエンドの実装も経験してきたため、データ構造や実装上の制約を踏まえたデザインができます。これからは、もっとユーザーに近い場所で、反応を受け取りながらWebデザインを磨いていきたいと考えています。</p>
+        <p>つくって終わりではなく、使われ方まで見届けたい。そんなスタンスで仕事に向き合っています。</p>
+        <p>受託開発の現場で、建設・社会インフラ・物流・宿泊・セキュリティ・観光など業界の異なる複数プロダクトに携わってきました。</p>
+      </div>
+    </div>
+    <div>
+      <p class="section-label">SKILLS & TOOLS</p>
+      <div class="skills-section">
+        <p class="skills-label">DESIGN</p>
+        <div class="skills-tags">
+          <span class="skill-tag">UI/UX</span>
+          <span class="skill-tag">Web/LP</span>
+          <span class="skill-tag">Graphic</span>
+          <span class="skill-tag">Color Scheme</span>
+          <span class="skill-tag">IA</span>
+          <span class="skill-tag">Wireframe</span>
+          <span class="skill-tag">Figma</span>
+        </div>
+      </div>
+      <div class="skills-section">
+        <p class="skills-label">FRONTEND</p>
+        <div class="skills-tags">
+          <span class="skill-tag">Vue.js</span>
+          <span class="skill-tag">WordPress</span>
+          <span class="skill-tag">HTML</span>
+          <span class="skill-tag">CSS</span>
+          <span class="skill-tag">JavaScript</span>
+          <span class="skill-tag">vue-i18n</span>
+        </div>
+      </div>
+      <div class="skills-section">
+        <p class="skills-label">BACKEND</p>
+        <div class="skills-tags">
+          <span class="skill-tag">PHP</span>
+        </div>
+      </div>
+      <p class="about__study">STUDY — HCD基礎検定（学習中）</p>
+      <p class="about__contact">CONTACT — <a href="mailto:sakurauchirinko@gmail.com">sakurauchirinko@gmail.com</a></p>
+    </div>
+  </div>
+</section>
+
+<section class="works">
+  <p class="section-label">WORKS</p>
+  <h2 class="works__heading">業務で携わったデザイン</h2>
+  <p class="works__sub">新卒入社後に担当した案件から4件を抜粋。</p>
+  <div class="works__grid">
+    <a href="case01.html" class="work-card work-card--featured">
+      <div class="work-card__header">
+        <span class="work-card__num" aria-hidden="true">01</span>
+        <span class="work-card__badge">UI / UX</span>
+      </div>
+      <h3 class="work-card__title">樹木点検・管理システム</h3>
+      <p class="work-card__desc">スマホ・タブレット・PCを横断してUIを再設計。情報量の多い業務システムを現場目線で整理した案件。</p>
+    </a>
+    <a href="case02.html" class="work-card">
+      <div class="work-card__header">
+        <span class="work-card__num" aria-hidden="true">02</span>
+        <span class="work-card__badge">Web Design</span>
+      </div>
+      <h3 class="work-card__title">Projection Mapping Award</h3>
+      <p class="work-card__desc">夜・光の世界観を軸にしたアワードサイト／LP。ビジュアルと掲載文言を担当。</p>
+    </a>
+    <a href="case03.html" class="work-card">
+      <div class="work-card__header">
+        <span class="work-card__num" aria-hidden="true">03</span>
+        <span class="work-card__badge">UI Design + Front</span>
+      </div>
+      <h3 class="work-card__title">セキュリティ審査管理</h3>
+      <p class="work-card__desc">セキュリティ審査・管理業務のUI設計。デザインからフロント実装・データ仕様の整備まで一貫対応。</p>
+    </a>
+    <a href="case04.html" class="work-card">
+      <div class="work-card__header">
+        <span class="work-card__num" aria-hidden="true">04</span>
+        <span class="work-card__badge">Graphic</span>
+      </div>
+      <h3 class="work-card__title">展示会グラフィック</h3>
+      <p class="work-card__desc">BtoB展示会のパンフレット・B2ポスター制作。ダーク基調＋ネオンで複数プロダクトを訴求したビジュアル設計。</p>
+    </a>
+  </div>
+</section>
+
+<footer class="footer">
+  <p class="footer__thanks">最後までご覧いただき、ありがとうございます。</p>
+  <p class="footer__contact">Sakurauchi Rinko — <a href="mailto:sakurauchirinko@gmail.com">sakurauchirinko@gmail.com</a></p>
+  <p class="footer__sub">Portfolio / Web · UI · Graphic</p>
+</footer>
+
+</body>
+</html>

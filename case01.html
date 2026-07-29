@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>樹木点検・管理システム — Sakurauchi Rinko</title>
+<meta name="description" content="樹木の点検・写真記録・AIリスク評価を一元管理する業務Webアプリのケーススタディ。ヒューリスティック評価とジャーニーマップによるリサーチから、課題の優先順位づけ、設計判断までを担当。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+/* ── case01 rebuild: scoped styles (uses the tokens defined on :root in style.css) ── */
+
+/* Hero: process overview diagram */
+.process-hero {
+  margin: 0 var(--content-px);
+  transform: translateY(-40px);
+  background: var(--white);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+  padding: 44px clamp(24px, 4vw, 56px);
+}
+.process-hero__eyebrow {
+  font-size: 11px; letter-spacing: 0.2em; font-weight: 500;
+  color: var(--label); text-transform: uppercase; margin-bottom: 28px;
+}
+.process-flow { display: flex; align-items: flex-start; gap: 6px; }
+.process-step { flex: 1 1 0; padding: 0 4px; min-width: 0; }
+.process-step__num {
+  font-family: var(--serif); font-size: 30px; font-weight: 400;
+  color: var(--gold); line-height: 1;
+}
+.process-step__en {
+  font-size: 10px; letter-spacing: 0.14em; color: var(--text-muted);
+  text-transform: uppercase; margin-top: 12px;
+}
+.process-step__title {
+  font-family: var(--serif); font-size: 18px; font-weight: 700;
+  color: var(--navy); margin: 4px 0 14px; line-height: 1.35;
+}
+.process-step__tag {
+  font-family: var(--sans); font-size: 9px; font-weight: 500;
+  letter-spacing: 0.04em; color: var(--label);
+  border: 1px solid rgba(26,58,122,0.35); border-radius: 100px;
+  padding: 1px 7px; margin-left: 6px; white-space: nowrap; vertical-align: middle;
+}
+.process-step__list { list-style: none; }
+.process-step__list li {
+  font-size: 12px; line-height: 1.7; color: var(--text-body);
+  position: relative; padding-left: 12px;
+}
+.process-step__list li::before {
+  content: ''; position: absolute; left: 0; top: 0.65em;
+  width: 4px; height: 4px; border-radius: 50%; background: var(--gold);
+}
+.process-arrow {
+  align-self: center; color: var(--gold); font-size: 16px;
+  flex: 0 0 auto; opacity: 0.55; line-height: 1;
+}
+.process-arrow--dim { opacity: 0.3; }
+
+/* Narrative blocks */
+.cs-block { padding: 56px var(--content-px); border-top: 1px solid rgba(0,0,0,0.06); }
+.cs-block--flush { border-top: none; }
+.cs-block__inner { max-width: 800px; }
+.cs-block__inner--wide { max-width: none; }
+.cs-lead { font-size: 14px; line-height: 2; max-width: 760px; margin-bottom: 8px; }
+
+/* Prioritisation reasons */
+.cs-reasons { list-style: none; margin: 24px 0; }
+.cs-reasons li {
+  position: relative; padding-left: 44px; margin-bottom: 16px;
+  font-size: 14px; line-height: 1.9; color: var(--text-body);
+  counter-increment: r;
+}
+.cs-reasons { counter-reset: r; }
+.cs-reasons li::before {
+  content: "0" counter(r);
+  position: absolute; left: 0; top: 0;
+  font-family: var(--serif); font-size: 20px; color: var(--gold); line-height: 1.4;
+}
+
+/* Design directions (reuses .approach-item from style.css) */
+.cs-approach-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin-top: 28px; }
+
+/* Design decisions: 課題 → 判断 → 根拠 cards */
+.cs-decisions { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 28px; }
+.cs-decision {
+  background: var(--white); border-radius: 12px; padding: 26px;
+  box-shadow: var(--card-shadow); border-left: 3px solid var(--gold);
+}
+.cs-decision__title {
+  font-family: var(--serif); font-size: 16px; font-weight: 700;
+  color: var(--navy); margin-bottom: 14px;
+}
+.cs-reason > div {
+  display: grid; grid-template-columns: 40px 1fr; gap: 12px;
+  padding: 9px 0; border-top: 1px solid rgba(0,0,0,0.05);
+}
+.cs-reason > div:first-child { border-top: none; padding-top: 0; }
+.cs-reason dt {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+  color: var(--label); padding-top: 2px;
+}
+.cs-reason dd { font-size: 13px; line-height: 1.7; color: var(--text-body); }
+
+/* Accessibility status chips */
+.cs-status { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+.cs-status__item {
+  display: flex; align-items: center; gap: 8px;
+  border: 1px solid rgba(0,0,0,0.1); border-radius: 100px;
+  padding: 6px 16px; font-size: 13px; color: var(--text-body);
+}
+.cs-status__sym { font-size: 12px; font-weight: 700; line-height: 1; }
+.cs-status__cap { font-size: 12px; color: var(--text-muted); margin-top: 12px; }
+
+@media (max-width: 768px) {
+  .process-hero { margin: 0 16px; transform: translateY(-24px); padding: 30px 22px; }
+  .process-flow { flex-wrap: wrap; gap: 8px 6px; }
+  .process-step { flex: 0 0 calc(50% - 3px); margin-bottom: 18px; }
+  .process-arrow { display: none; }
+  .cs-approach-grid { grid-template-columns: 1fr; gap: 28px; }
+  .cs-decisions { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header class="case-header">
+  <a href="index.html" class="case-header__back">← Works</a>
+  <span class="case-header__name">Sakurauchi Rinko</span>
+</header>
+
+<section class="case-intro">
+  <p class="case-intro__label">CASE STUDY — 01</p>
+  <h1 class="case-intro__title">樹木点検・管理システム</h1>
+  <p class="case-intro__desc">街路樹や施設の樹木を対象に、点検・写真記録・AIによるリスク評価・メンテナンス履歴を一元管理するWebアプリ。点検員が現場のスマホ・タブレットで使うことを前提に、情報量の多い業務システムのUI/UXを、リサーチから設計判断まで一貫して担当しています（開発チームのレビューを受けながら進行中）。</p>
+  <div class="case-intro__meta">
+    <div><p class="case-meta__label">ROLE</p><p class="case-meta__value">UI / UX・一部環境構築</p></div>
+    <div><p class="case-meta__label">YEAR</p><p class="case-meta__value">2025.11〜</p></div>
+    <div><p class="case-meta__label">PLATFORM</p><p class="case-meta__value">iOS / Android / Web</p></div>
+    <div><p class="case-meta__label">TEAM</p><p class="case-meta__value">デザイン担当</p></div>
+    <div><p class="case-meta__label">TOOLS</p><p class="case-meta__value">Figma</p></div>
+  </div>
+</section>
+
+<!-- HERO: プロセス俯瞰図（リサーチ → 課題定義 → 設計 → 改善） -->
+<div class="process-hero">
+  <p class="process-hero__eyebrow">Design Process</p>
+  <div class="process-flow">
+    <div class="process-step">
+      <span class="process-step__num" aria-hidden="true">01</span>
+      <p class="process-step__en">Research</p>
+      <p class="process-step__title">リサーチ</p>
+      <ul class="process-step__list">
+        <li>ヒューリスティック評価</li>
+        <li>ジャーニーマップ</li>
+      </ul>
+    </div>
+    <span class="process-arrow" aria-hidden="true">→</span>
+    <div class="process-step">
+      <span class="process-step__num" aria-hidden="true">02</span>
+      <p class="process-step__en">Define</p>
+      <p class="process-step__title">課題定義</p>
+      <ul class="process-step__list">
+        <li>登録フローから着手</li>
+        <li>影響範囲で優先順位</li>
+      </ul>
+    </div>
+    <span class="process-arrow" aria-hidden="true">→</span>
+    <div class="process-step">
+      <span class="process-step__num" aria-hidden="true">03</span>
+      <p class="process-step__en">Design</p>
+      <p class="process-step__title">設計</p>
+      <ul class="process-step__list">
+        <li>情報再設計・導線</li>
+        <li>配色・アクセシビリティ</li>
+      </ul>
+    </div>
+    <span class="process-arrow process-arrow--dim" aria-hidden="true">→</span>
+    <div class="process-step">
+      <span class="process-step__num" aria-hidden="true">04</span>
+      <p class="process-step__en">Ongoing</p>
+      <p class="process-step__title">改善<span class="process-step__tag">進行中</span></p>
+      <ul class="process-step__list">
+        <li>βに向け継続改善</li>
+        <li>2026.9 提供予定</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 03 背景と課題 -->
+<section class="cs-block cs-block--flush">
+  <div class="cs-block__inner">
+    <h2 class="overview__heading">背景と課題</h2>
+    <div class="overview__text">
+      <p>点検には専門知識が必要で、樹木ごとに基本情報・点検結果・AI評価・写真・メンテナンス履歴と、扱う情報が多岐にわたります。現場の点検員が必要な情報へ素早くたどり着けることが、最優先の課題でした。</p>
+      <p>利用シーンも現場（スマホ・タブレット）と管理（PC）で大きく異なり、デバイスごとの最適化が不十分な箇所もありました。これらを踏まえ、点検員が最初に必ず触れる新規登録フローから優先的に改善を進める方針を立てました。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 04 リサーチ：課題の発見 -->
+<section class="case-screens">
+  <h2 class="screens__heading">リサーチ：課題の発見</h2>
+  <div class="screens__grid">
+    <div class="screen-item">
+      <div class="screen-item__img screen-item__img--landscape"><img src="images/case01-cjm.png" alt="カスタマージャーニーマップ — 新規登録フローの体験を可視化"></div>
+      <p class="screen-item__caption">カスタマージャーニーマップ — 新規登録フローの体験を可視化し、迷いや離脱が起きやすい箇所を特定</p>
+    </div>
+    <div class="screen-item">
+      <div class="screen-item__img screen-item__img--landscape"><img src="images/case01-heuristic.png" alt="ヒューリスティック評価 — 既存UIの操作性・視認性を評価"></div>
+      <p class="screen-item__caption">ヒューリスティック評価 — AIによるコードレベルの分析と目視を併用し、登録の入口・撮影フィードバック・連続登録の扱いに課題を特定</p>
+    </div>
+  </div>
+</section>
+
+<!-- 05 課題の定義と優先順位 -->
+<section class="cs-block">
+  <div class="cs-block__inner">
+    <h2 class="overview__heading">課題の定義と優先順位</h2>
+    <p class="cs-lead">発見した課題は複数の画面にまたがっていたため、すべてを同時に扱わず、点検員が最初に必ず触れる「新規登録フロー」から着手する方針を決めました。優先した理由は3つです。</p>
+    <ol class="cs-reasons">
+      <li>全点検員が必ず通る導線で、影響範囲がもっとも広い</li>
+      <li>スマホでの操作起点（プラスボタンのみ）が直感的でなく、離脱リスクが高い</li>
+      <li>数十本の連続登録という現場特有の使い方が、設計に反映されていない</li>
+    </ol>
+    <p class="cs-lead">この起点を軸に、下流の詳細画面・一覧へと順に改善を展開しました。限られた工数の中で「どこから解くか」を決めることを、設計の第一歩に置いています。</p>
+  </div>
+</section>
+
+<!-- 06 改善の方針 -->
+<section class="cs-block">
+  <div class="cs-block__inner cs-block__inner--wide">
+    <p class="section-label" style="color: var(--navy);">APPROACH</p>
+    <h2 class="overview__heading">改善の方針</h2>
+    <div class="cs-approach-grid">
+      <div class="approach-item">
+        <div class="approach-item__header">
+          <span class="approach-item__num" aria-hidden="true">01</span>
+          <span class="approach-item__title">詳細画面を優先度順に再設計</span>
+        </div>
+        <p class="approach-item__text">点検結果（専門家診断／2次点検・AI評価・写真・メモ）とメンテナンス履歴を優先度順に整理し、リスクの高い部位・項目を先に見せる表示順にしました。</p>
+      </div>
+      <div class="approach-item">
+        <div class="approach-item__header">
+          <span class="approach-item__num" aria-hidden="true">02</span>
+          <span class="approach-item__title">現場で迷わせない導線</span>
+        </div>
+        <p class="approach-item__text">セクション内ジャンプや現在位置ナビを追加。タッチ端末で機能しにくかった編集導線（鉛筆＋title属性）も見直しました。</p>
+      </div>
+      <div class="approach-item">
+        <div class="approach-item__header">
+          <span class="approach-item__num" aria-hidden="true">03</span>
+          <span class="approach-item__title">マルチデバイス最適化</span>
+        </div>
+        <p class="approach-item__text">PC・タブレット・スマホそれぞれで表示を最適化。幹周の桁数やフォント調整、iPad縦画面の不具合まで、実機で確認しながら対応しました。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 07 設計と改善（課題 → 判断 → 根拠） -->
+<section class="cs-block">
+  <div class="cs-block__inner cs-block__inner--wide">
+    <h2 class="overview__heading">設計と改善</h2>
+    <p class="cs-lead">まだ多くの画面が改修中のため、完成した最終画面ではなく、主要な場面ごとに「どんな課題を、どう判断し、なぜそう決めたか」を整理しました。</p>
+    <!-- ▼ 各カードの上に Before/After 画像やワイヤーフレームを差し込むと、さらに厚みが出ます（無くても成立するよう文章で完結させています） -->
+    <div class="cs-decisions">
+      <div class="cs-decision">
+        <p class="cs-decision__title">登録の入口</p>
+        <dl class="cs-reason">
+          <div><dt>課題</dt><dd>スマホでは＋ボタンのみで、登録の入口が直感的でない。</dd></div>
+          <div><dt>判断</dt><dd>一覧上部に明示的な「新規登録」を置き、単独登録と連続登録を入口で分岐。</dd></div>
+          <div><dt>根拠</dt><dd>数十本を続けて登録する使い方と、1本だけ足す使い方は目的が異なるため。</dd></div>
+        </dl>
+      </div>
+      <div class="cs-decision">
+        <p class="cs-decision__title">位置と基本情報</p>
+        <dl class="cs-reason">
+          <div><dt>課題</dt><dd>地図と基本情報の入力が1画面に混在し、操作が散漫になる。</dd></div>
+          <div><dt>判断</dt><dd>位置指定と情報入力をステップに分割。</dd></div>
+          <div><dt>根拠</dt><dd>一度に見る情報を絞り、現場での入力ミスを減らすため。</dd></div>
+        </dl>
+      </div>
+      <div class="cs-decision">
+        <p class="cs-decision__title">撮影</p>
+        <dl class="cs-reason">
+          <div><dt>課題</dt><dd>写真が撮れたかどうかを判断しづらい。</dd></div>
+          <div><dt>判断</dt><dd>撮影完了の状態表示とサムネイル確認を追加。</dd></div>
+          <div><dt>根拠</dt><dd>屋外・片手操作でも「撮れた」が一目でわかるように。</dd></div>
+        </dl>
+      </div>
+      <div class="cs-decision">
+        <p class="cs-decision__title">詳細画面</p>
+        <dl class="cs-reason">
+          <div><dt>課題</dt><dd>点検結果・AI評価・写真・履歴が並列で、優先度が読み取れない。</dd></div>
+          <div><dt>判断</dt><dd>リスクの高い部位・項目を上、更新履歴を下へと優先度順に再配置。</dd></div>
+          <div><dt>根拠</dt><dd>現場でまず知りたいのは「今どこが危ないか」だから。</dd></div>
+        </dl>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 08 アクセシビリティへの配慮 -->
+<section class="cs-block">
+  <div class="cs-block__inner">
+    <h2 class="overview__heading">アクセシビリティへの配慮</h2>
+    <div class="overview__text">
+      <p>リスクレベルを配色ルールで表現し（中間リスクを示す黄系を追加）、あわせて色だけに依存しない状態表現を用いました。色覚特性にかかわらず、現場で危険度が瞬時に伝わることを狙っています。</p>
+      <p>行政での利用を見据え、インフラ点検要領や技術カタログといった公的資料をベンチマークに表示を検討。JIS X 8341-3 を意識し、コントラストやテキストの可読性にも配慮しました。</p>
+    </div>
+    <div class="cs-status">
+      <div class="cs-status__item"><span class="cs-status__sym" style="color:#2a6e50;">●</span> 低リスク（健全）</div>
+      <div class="cs-status__item"><span class="cs-status__sym" style="color:#8a6000;">▲</span> 中リスク（経過観察）</div>
+      <div class="cs-status__item"><span class="cs-status__sym" style="color:#c0392b;">■</span> 高リスク（要対応）</div>
+    </div>
+    <p class="cs-status__cap">色だけに頼らず、形状とラベルでも状態が読み取れるようにしています（配色は本番UIに準拠する想定の模式図です）。</p>
+  </div>
+</section>
+
+<!-- 09 現状と学び -->
+<section class="case-results">
+  <h2 class="results__heading">現状と学び</h2>
+  <p class="results__text">本案件は2026年9月のベータ提供開始に向けて進行中で、多くの画面は現在も改修を続けています。だからこそ、完成した最終画面よりも「何を課題と捉え、どう優先順位をつけ、どう判断したか」を残すことを重視しました。情報量の多い業務システムを、現場の点検員が迷わず使える「使える画面」へ落とし込むという設計スタンスがはっきりした案件になりました。</p>
+</section>
+
+<nav class="case-nav">
+  <span class="case-nav__link case-nav__link--disabled"></span>
+  <a href="case02.html" class="case-nav__link"><span class="case-nav__small">NEXT</span>Projection Mapping Award →</a>
+</nav>
+
+<footer class="case-footer">
+  <p class="case-footer__text">Sakurauchi Rinko — <a href="mailto:sakurauchirinko@gmail.com">sakurauchirinko@gmail.com</a></p>
+</footer>
+
+</body>
+</html>
