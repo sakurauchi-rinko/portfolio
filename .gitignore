@@ -1,2 +1,12 @@
 .DS_Store
 .claude/
+
+# PDF版ポートフォリオと生成用ソース。
+# 公開サイトには載せない方針のため、リポジトリ管理外にしている
+# （コミットすると portfolio-print*.html が Pages 経由で閲覧可能になる）。
+Portfolio2026_SakurauchiRinko.pdf
+Portfolio2026_SakurauchiRinko_Full.pdf
+portfolio-print.html
+portfolio-print-full.html
+print.css
+images-print/
